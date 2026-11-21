@@ -1,0 +1,25 @@
+{
+  "name": "spatial-browser",
+  "version": "0.1.0",
+  "description": "Spatial Browser — a desktop workspace where each web page is a free-floating independent window",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --inspect",
+    "test": "electron . --test --no-sandbox"
+  },
+  "keywords": [
+    "electron",
+    "browser",
+    "spatial",
+    "webcontentsview"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^36.0.0"
+  },
+  "allowScripts": {
+    "electron@36.9.5": true
+  }
+}
