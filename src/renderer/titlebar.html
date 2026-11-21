@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 35px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(90deg, #1e2235 0%, #161826 100%);
+      color: #f8fafc;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      border: 2px solid rgba(99, 102, 241, 0.6);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      cursor: grab;
+      touch-action: none;
+    }
+    body:active {
+      cursor: grabbing;
+    }
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      pointer-events: none;
+    }
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      pointer-events: auto;
+    }
+    .btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+    }
+    .btn-close:hover {
+      background: #ef4444 !important;
+      color: white !important;
+    }
+    .favicon {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar-left">
+    <div class="titlebar-actions">
+      <button id="btn-back" class="btn" title="Назад">◂</button>
+      <button id="btn-forward" class="btn" title="Вперед">▸</button>
+    </div>
+    <span id="favicon-container">🌐</span>
+    <span id="title-text" class="title">Active Window</span>
+  </div>
+  <div class="titlebar-actions">
+    <button id="btn-minimize" class="btn" title="Згорнути вікно">─</button>
+    <button id="btn-close" class="btn btn-close" title="Закрити вікно">✕</button>
+  </div>
+
+  <script>
+    let activeId = null;
+    let isDragging = false;
+    let startScreenX = 0;
+    let startScreenY = 0;
+
+    function getAPI() {
+      return window.spatialAPI || window.spatialBrowser || null;
+    }
+
+    function updateTitlebar(id, title, favicon) {
+      if (id) activeId = id;
+      if (typeof title === 'string') {
+        document.getElementById('title-text').textContent = title || 'Untitled';
+      }
+      if (favicon !== undefined) {
+        const favContainer = document.getElementById('favicon-container');
+        if (favicon) {
+          favContainer.innerHTML = `<img src="${favicon}" class="favicon" onerror="this.parentElement.textContent='🌐'"/>`;
+        } else {
+          favContainer.textContent = '🌐';
+        }
+      }
+    }
+
+    window.electronAPI = {
+      updateInfo: (data) => {
+        if (!data) return;
+        updateTitlebar(data.id, data.title, data.favicon);
+      }
+    };
+
+    // Prevent drag triggering on buttons
+    ['btn-close', 'btn-minimize', 'btn-back', 'btn-forward'].forEach((btnId) => {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('mousedown', (e) => e.stopPropagation());
+      }
+    });
+
+    document.getElementById('btn-minimize').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const api = getAPI();
+      if (activeId && api && api.minimizeWindow) {
+        api.minimizeWindow(activeId, true);
+      }
+    });
+
+    document.getElementById('btn-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const api = getAPI();
+      if (activeId && api && api.closeWindow) {
+        api.closeWindow(activeId);
+      }
+    });
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const api = getAPI();
+      if (activeId && api && api.navigateWindow) {
+        api.navigateWindow(activeId, 'back');
+      }
+    });
+
+    document.getElementById('btn-forward').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const api = getAPI();
+      if (activeId && api && api.navigateWindow) {
+        api.navigateWindow(activeId, 'forward');
+      }
+    });
+
+    // Native Pointer Drag Support with PointerCapture
+    document.body.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;
+      isDragging = true;
+      startScreenX = e.screenX;
+      startScreenY = e.screenY;
+      try {
+        document.body.setPointerCapture(e.pointerId);
+      } catch (_) {}
+    });
+
+    document.body.addEventListener('pointermove', (e) => {
+      if (!isDragging || !activeId) return;
+      const dx = e.screenX - startScreenX;
+      const dy = e.screenY - startScreenY;
+      if (dx === 0 && dy === 0) return;
+      startScreenX = e.screenX;
+      startScreenY = e.screenY;
+      const api = getAPI();
+      if (api && api.moveActiveWindowBy) {
+        api.moveActiveWindowBy(dx, dy);
+      }
+    });
+
+    const stopDrag = (e) => {
+      if (isDragging) {
+        isDragging = false;
+        try {
+          if (e && e.pointerId) document.body.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+    };
+
+    document.body.addEventListener('pointerup', stopDrag);
+    document.body.addEventListener('pointercancel', stopDrag);
+
+    // Initialize API event listeners once loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      const api = getAPI();
+      if (api) {
+        if (api.onActiveWindowChanged) {
+          api.onActiveWindowChanged((data) => {
+            if (data && data.id) {
+              updateTitlebar(data.id, data.title, data.favicon);
+            }
+          });
+        }
+        if (api.onViewNavigated) {
+          api.onViewNavigated((data) => {
+            if (data && data.id === activeId) {
+              updateTitlebar(data.id, data.title, data.favicon);
+            }
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
