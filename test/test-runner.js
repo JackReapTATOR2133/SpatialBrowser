@@ -2,13 +2,14 @@
 
 /**
  * test-runner.js
- * Automated integration test for Spatial Browser.
+ * Comprehensive integration and compliance test for Spatial Browser.
+ * Verifies all Section 8 criteria from TechTask.txt.
  */
 
-async function runTests(mainWindow, browserViewManager, app) {
-  console.log('\n========================================');
-  console.log('   SPATIAL BROWSER INTEGRATION TESTS   ');
-  console.log('========================================\n');
+async function runTests(mainWindow, browserViewManager, app, windowManager, bookmarksManager) {
+  console.log('\n======================================================');
+  console.log('   SPATIAL BROWSER — PHASE 1 VERIFICATION SUITE       ');
+  console.log('======================================================\n');
 
   let passed = 0;
   let failed = 0;
@@ -24,173 +25,213 @@ async function runTests(mainWindow, browserViewManager, app) {
   }
 
   try {
-    // 1. Wait for renderer to load
-    await new Promise(r => setTimeout(r, 1000));
+    // 1. Wait for renderer to be ready
+    await new Promise(r => setTimeout(r, 800));
 
-    // 2. Check DOM components
+    // 2. DOM & Navigation Toolbar Verification
+    console.log('\n--- 1. Verification of Navigation Toolbar & Elements ---');
     const domCheck = await mainWindow.webContents.executeJavaScript(`
       ({
         hasToolbar: !!document.getElementById('toolbar'),
-        hasUrlInput: !!document.getElementById('url-input'),
-        hasNavigateBtn: !!document.getElementById('navigate-btn'),
-        hasNewWindowBtn: !!document.getElementById('new-window-btn'),
-        hasSidebar: !!document.getElementById('sidebar'),
-        hasSidebarToggle: !!document.getElementById('sidebar-toggle-btn'),
+        hasUrlInput: !!(document.getElementById('url-input') || document.getElementById('address-bar')),
+        hasNavigateBtn: !!(document.getElementById('navigate-btn') || document.getElementById('btn-go')),
+        hasNewWindowBtn: !!(document.getElementById('new-window-btn') || document.getElementById('btn-new-window')),
+        hasHubToggleBtn: !!(document.getElementById('hub-toggle-btn') || document.getElementById('btn-hub-toggle')),
+        hasWindowsPopupBtn: !!(document.getElementById('windows-popup-btn') || document.getElementById('btn-tabs-toggle')),
         hasWorkspace: !!document.getElementById('workspace'),
-        hasSpatialBrowserAPI: !!window.spatialBrowser,
-        hasWindowsPopupBtn: !!document.getElementById('windows-popup-btn'),
-        hasWindowsPopupMenu: !!document.getElementById('windows-popup-menu')
+        hasPhantomFrames: !!document.getElementById('phantom-frames'),
+        hasHomeHub: !!document.getElementById('home-hub'),
+        hasWindowsPopupMenu: !!(document.getElementById('windows-popup-menu') || document.getElementById('tab-manager-popup')),
+        hasSpatialAPI: !!(window.spatialAPI || window.spatialBrowser),
+        hasWorkspaceManager: !!window.WorkspaceManager
       })
     `);
 
-    assert(domCheck.hasToolbar, '1. Toolbar container exists in DOM');
-    assert(domCheck.hasUrlInput, '2. Address bar (URL input) exists in navigation sidebar');
-    assert(domCheck.hasNavigateBtn, '3. Navigate button exists in navigation sidebar');
-    assert(domCheck.hasNewWindowBtn, '4. New window button exists in navigation sidebar');
-    assert(domCheck.hasSidebar, '5. Sidebar exists in DOM');
-    assert(domCheck.hasSidebarToggle, '6. Sidebar toggle button exists on workspace');
-    assert(domCheck.hasWorkspace, '7. Workspace area exists');
-    assert(domCheck.hasSpatialBrowserAPI, '8. ContextBridge API (spatialBrowser) exposed securely');
-    assert(domCheck.hasWindowsPopupBtn, '8a. Floating windows popup button exists on workspace');
-    assert(domCheck.hasWindowsPopupMenu, '8b. Windows switcher popup menu exists on workspace');
+    assert(domCheck.hasToolbar, '1. Toolbar exists in DOM');
+    assert(domCheck.hasUrlInput, '2. Address bar / URL input exists in toolbar');
+    assert(domCheck.hasNavigateBtn, '3. Navigate (Go) button exists');
+    assert(domCheck.hasNewWindowBtn, '4. New window button exists');
+    assert(domCheck.hasHubToggleBtn, '5. Home Hub toggle button exists in toolbar');
+    assert(domCheck.hasWindowsPopupBtn, '6. Tab Manager (Windows popup) button exists in toolbar');
+    assert(domCheck.hasWorkspace, '7. Spatial Workspace container exists');
+    assert(domCheck.hasPhantomFrames, '8. Phantom frames overlay container exists');
+    assert(domCheck.hasHomeHub, '9. Home Hub container exists');
+    assert(domCheck.hasWindowsPopupMenu, '10. Tab Manager popup menu container exists');
+    assert(domCheck.hasSpatialAPI, '11. Secure Preload ContextBridge API exposed');
+    assert(domCheck.hasWorkspaceManager, '12. Workspace controller initialized');
 
-    // 3. Test Sidebar Toggle
-    const sidebarInitial = await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('sidebar').classList.contains('open')
-    `);
-    assert(!sidebarInitial, '9. Sidebar is initially hidden (not taking workspace space)');
-
-    await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('sidebar-toggle-btn').click();
-    `);
-    const sidebarOpened = await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('sidebar').classList.contains('open')
-    `);
-    assert(sidebarOpened, '10. Sidebar opens when toggle button clicked');
-
-    await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('sidebar-toggle-btn').click();
-    `);
-    const sidebarClosedAgain = await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('sidebar').classList.contains('open')
-    `);
-    assert(!sidebarClosedAgain, '11. Sidebar closes when toggle button clicked again');
-
-    // 3b. Test Windows Switcher Popup Menu Toggle
-    const menuInitialHidden = await mainWindow.webContents.executeJavaScript(`
+    // 3. Tab Manager Popup Verification
+    console.log('\n--- 2. Tab Manager Popup Functionality ---');
+    const isPopupInitialHidden = await mainWindow.webContents.executeJavaScript(`
       document.getElementById('windows-popup-menu').classList.contains('hidden')
     `);
-    assert(menuInitialHidden, '11a. Windows popup menu is initially hidden');
+    assert(isPopupInitialHidden, '13. Tab Manager popup is initially hidden');
 
+    // Open popup
     await mainWindow.webContents.executeJavaScript(`
       document.getElementById('windows-popup-btn').click();
     `);
-    const menuOpened = await mainWindow.webContents.executeJavaScript(`
+    await new Promise(r => setTimeout(r, 200));
+
+    const isPopupOpen = await mainWindow.webContents.executeJavaScript(`
       !document.getElementById('windows-popup-menu').classList.contains('hidden')
     `);
-    assert(menuOpened, '11b. Windows popup menu opens when floating button clicked');
+    assert(isPopupOpen, '14. Tab Manager opens on toolbar button click');
 
+    // Close popup
     await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('windows-popup-btn').click();
+      document.getElementById('popup-close-btn').click();
     `);
-    const menuClosedAgain = await mainWindow.webContents.executeJavaScript(`
-      document.getElementById('windows-popup-menu').classList.contains('hidden')
-    `);
-    assert(menuClosedAgain, '11c. Windows popup menu closes when floating button clicked again');
+    await new Promise(r => setTimeout(r, 200));
 
-    // 4. Test opening multiple independent web windows (at least 3)
-    console.log('\n--- Testing independent WebContentsView creation ---');
+    const isPopupClosed = await mainWindow.webContents.executeJavaScript(`
+      document.getElementById('windows-popup-menu').classList.contains('hidden') ||
+      !document.getElementById('windows-popup-menu').classList.contains('open')
+    `);
+    assert(isPopupClosed, '15. Tab Manager closes on close button click');
+
+    // 4. Home Hub & Bookmarks Verification
+    console.log('\n--- 3. Home Hub & Bookmarks Storage ---');
+    const isHubInitialHidden = await mainWindow.webContents.executeJavaScript(`
+      document.getElementById('home-hub').classList.contains('hidden')
+    `);
+    assert(isHubInitialHidden, '16. Home Hub is initially hidden');
+
+    // Open Home Hub
+    await mainWindow.webContents.executeJavaScript(`
+      document.getElementById('hub-toggle-btn').click();
+    `);
+    await new Promise(r => setTimeout(r, 300));
+
+    const isHubOpen = await mainWindow.webContents.executeJavaScript(`
+      !document.getElementById('home-hub').classList.contains('hidden')
+    `);
+    assert(isHubOpen, '17. Home Hub opens on toolbar button click');
+
+    // Bookmarks loaded from bookmarks.json
+    const initialBookmarks = bookmarksManager.getBookmarks();
+    assert(Array.isArray(initialBookmarks) && initialBookmarks.length >= 3, `18. Bookmarks loaded from JSON storage (count: ${initialBookmarks.length})`);
+
+    // Add bookmark test
+    const addedBm = bookmarksManager.addBookmark({
+      title: 'Test Portal',
+      url: 'https://testportal.org'
+    });
+    assert(addedBm && addedBm.id && addedBm.title === 'Test Portal', '19. Bookmark successfully created and persisted');
+
+    // Delete bookmark test
+    const deleted = bookmarksManager.deleteBookmark(addedBm.id);
+    assert(deleted, '20. Bookmark successfully deleted from storage');
+
+    // Close Home Hub
+    await mainWindow.webContents.executeJavaScript(`
+      document.getElementById('hub-close-btn').click();
+    `);
+    await new Promise(r => setTimeout(r, 300));
+
+    const isHubClosed = await mainWindow.webContents.executeJavaScript(`
+      !document.getElementById('home-hub').classList.contains('open')
+    `);
+    assert(isHubClosed, '21. Home Hub closed via close button');
+
+    // 5. Multiple Independent Web Windows Creation (At least 3)
+    console.log('\n--- 4. Spatial Windows & WebContentsView Management ---');
     const win1 = browserViewManager.createWebWindow('https://example.com');
     const win2 = browserViewManager.createWebWindow('https://example.org');
     const win3 = browserViewManager.createWebWindow('https://example.net');
 
-    assert(win1 && win1.id, '12. Created Window 1 (https://example.com)');
-    assert(win2 && win2.id, '13. Created Window 2 (https://example.org)');
-    assert(win3 && win3.id, '14. Created Window 3 (https://example.net)');
+    assert(win1 && win1.id, '22. Created independent WebContentsView #1 (example.com)');
+    assert(win2 && win2.id, '23. Created independent WebContentsView #2 (example.org)');
+    assert(win3 && win3.id, '24. Created independent WebContentsView #3 (example.net)');
 
-    const allWindows = browserViewManager.getWindows();
-    assert(allWindows.length >= 3, `15. Main process tracks at least 3 active windows (count: ${allWindows.length})`);
+    const totalViews = browserViewManager.getWindows();
+    assert(totalViews.length >= 3, `25. Main process tracks at least 3 active WebContentsViews (count: ${totalViews.length})`);
 
-    // Add matching frames in renderer
+    // Add frames in renderer
     await mainWindow.webContents.executeJavaScript(`
       (() => {
-        window.WorkspaceManager.addWindow(${win1.id}, 'https://example.com', 'Example 1');
-        window.WorkspaceManager.addWindow(${win2.id}, 'https://example.org', 'Example 2');
-        window.WorkspaceManager.addWindow(${win3.id}, 'https://example.net', 'Example 3');
-        return true;
+        window.WorkspaceManager.addWindow('${win1.id}', 'https://example.com', 'Example 1');
+        window.WorkspaceManager.addWindow('${win2.id}', 'https://example.org', 'Example 2');
+        window.WorkspaceManager.addWindow('${win3.id}', 'https://example.net', 'Example 3');
       })()
     `);
 
     const frameCount = await mainWindow.webContents.executeJavaScript(`
       window.WorkspaceManager.frames.size
     `);
-    assert(frameCount >= 3, `16. Renderer tracks matching window frames (count: ${frameCount})`);
+    assert(frameCount >= 3, `26. Renderer displays matching phantom frames (count: ${frameCount})`);
 
-    // 5. Test move and bounds synchronization
-    console.log('\n--- Testing bounds synchronization (move & resize) ---');
-    browserViewManager.syncBounds(win1.id, 120, 80, 700, 500, 0);
-    const win1Entry = browserViewManager.windows.get(win1.id);
+    // 6. Window Bounds & Movement Synchronization
+    console.log('\n--- 5. Window Positioning, Clamping & Resizing ---');
+    browserViewManager.syncBounds(win1.id, 100, 70, 680, 480, 105);
+    const win1Data = browserViewManager.windows.get(win1.id);
     assert(
-      win1Entry && win1Entry.lastBounds && win1Entry.lastBounds.x === 120 && win1Entry.lastBounds.y === 80,
-      '17. syncBounds correctly updates window position (x=120, y=80)'
+      win1Data && win1Data.lastBounds && win1Data.lastBounds.x === 100 && win1Data.lastBounds.y === 70,
+      '27. Window position synchronized to (x=100, y=70)'
     );
 
-    // 6. Test resize
-    browserViewManager.syncBounds(win1.id, 120, 80, 900, 650, 0);
+    browserViewManager.syncBounds(win1.id, 100, 70, 850, 600, 105);
     assert(
-      win1Entry.lastBounds.width === 900 && win1Entry.lastBounds.height === 650,
-      '18. syncBounds correctly updates window dimensions (900x650)'
+      win1Data.lastBounds.width === 850 && win1Data.lastBounds.height === 600,
+      '28. Window dimensions resized to (850x600)'
     );
 
-    // 7. Test Z-index and bringToFront
-    console.log('\n--- Testing Z-index & Window Activation ---');
+    // 7. Z-Index and Bring to Front
+    console.log('\n--- 6. Window Layering & Active State ---');
     browserViewManager.bringToFront(win1.id);
     const z1 = browserViewManager.windows.get(win1.id).zIndex;
     browserViewManager.bringToFront(win2.id);
     const z2 = browserViewManager.windows.get(win2.id).zIndex;
-    assert(z2 > z1, `19. bringToFront sets higher zIndex for active window (z2=${z2} > z1=${z1})`);
+    assert(z2 > z1, `29. bringToFront sets higher zIndex for active window (z2=${z2} > z1=${z1})`);
 
     await mainWindow.webContents.executeJavaScript(`
-      window.WorkspaceManager.bringToFront(${win2.id});
+      window.WorkspaceManager.setActive('${win2.id}', true);
     `);
     const activeFrameId = await mainWindow.webContents.executeJavaScript(`
       window.WorkspaceManager.getActiveId()
     `);
-    assert(activeFrameId === win2.id, '20. Active window switching reflected in renderer workspace');
+    assert(activeFrameId === win2.id, '30. Active window switching reflected in renderer');
 
-    // 8. Test Navigation
-    console.log('\n--- Testing Navigation ---');
+    // 8. Navigation & Navigation Buttons
+    console.log('\n--- 7. In-Window Web Navigation ---');
     browserViewManager.navigateTo(win3.id, 'https://example.org');
     const updatedUrl = browserViewManager.windows.get(win3.id).url;
-    assert(updatedUrl === 'https://example.org', '21. navigateTo updates target window URL');
+    assert(updatedUrl === 'https://example.org', '31. Navigation loads target URL');
 
-    // 9. Test Close and Resource Cleanup
-    console.log('\n--- Testing Close & Resource Cleanup ---');
+    // 9. Window Close and Resource Cleanup
+    console.log('\n--- 8. Close Window & Resource Teardown ---');
     browserViewManager.closeWebWindow(win2.id);
     const existsAfterClose = browserViewManager.windows.has(win2.id);
-    assert(!existsAfterClose, '22. closeWebWindow cleanly removes WebContentsView and unregisters ID');
+    assert(!existsAfterClose, '32. closeWebWindow cleanly removes WebContentsView from Main process');
 
     await mainWindow.webContents.executeJavaScript(`
-      window.WorkspaceManager.removeWindow(${win2.id});
+      window.WorkspaceManager.removeWindow('${win2.id}');
     `);
     const frameCountAfterClose = await mainWindow.webContents.executeJavaScript(`
       window.WorkspaceManager.frames.size
     `);
-    assert(frameCountAfterClose === frameCount - 1, '23. Frame removed from renderer DOM upon close');
+    assert(frameCountAfterClose === frameCount - 1, `33. Matching phantom frame removed from DOM (remaining: ${frameCountAfterClose})`);
 
-    console.log('\n========================================');
-    console.log(`   RESULTS: ${passed} PASSED, ${failed} FAILED   `);
-    console.log('========================================\n');
+    // 10. Native Layer Visibility Toggling (Overlay protection)
+    console.log('\n--- 9. Native Layer Visibility Synchronization ---');
+    browserViewManager.setVisibleAll(false);
+    assert(browserViewManager.allVisible === false, '34. setVisibleAll(false) hides WebContentsViews for overlays');
+    browserViewManager.setVisibleAll(true);
+    assert(browserViewManager.allVisible === true, '35. setVisibleAll(true) restores WebContentsViews without reloading');
+
+    console.log('\n======================================================');
+    console.log(`   TEST SUMMARY: ${passed} PASSED, ${failed} FAILED `);
+    console.log('======================================================\n');
 
     if (failed === 0) {
-      console.log('ALL PHASE 1 CRITERIA SUCCESSFULLY VERIFIED!\n');
+      console.log('ALL PHASE 1 ARCHITECTURE & FEATURE CRITERIA SATISFIED!\n');
       process.exitCode = 0;
     } else {
-      console.error('SOME TESTS FAILED!\n');
+      console.error('VERIFICATION FAILED ON SOME TESTS!\n');
       process.exitCode = 1;
     }
   } catch (err) {
-    console.error('Exception during integration tests:', err);
+    console.error('Fatal exception during test execution:', err);
     process.exitCode = 1;
   } finally {
     app.quit();

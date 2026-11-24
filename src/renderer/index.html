@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:;">
+  <title>Spatial Browser</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/workspace.css">
+  <link rel="stylesheet" href="styles/hub.css">
+  <link rel="stylesheet" href="styles/popup.css">
+  <link rel="stylesheet" href="styles/extensions.css">
+  <link rel="stylesheet" href="styles/downloads.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- UPPER NAVIGATION TOOLBAR - MASTER DECK -->
+    <header id="toolbar">
+      <div class="toolbar-brand-group">
+        <button id="windows-popup-btn" class="btn btn-icon" title="Відкрити бічну панель вікон (Tab Manager)">
+          <span>☰</span>
+          <span id="open-tabs-badge" class="badge">0</span>
+        </button>
+
+        <div class="toolbar-brand" id="brand-logo" title="Spatial Browser (Відкрити Home Hub)">
+          <span class="brand-icon">⬡</span>
+          <span>Spatial</span>
+        </div>
+
+        <button id="app-menu-btn" class="btn btn-icon brand-menu-btn" title="Головне меню (Файл, Правка, Вигляд, Вікна)">⋮</button>
+      </div>
+
+      <div class="toolbar-center">
+        <div class="active-win-controls">
+          <button id="toolbar-btn-back" class="btn btn-icon" title="Назад (активне вікно)">◂</button>
+          <button id="toolbar-btn-forward" class="btn btn-icon" title="Вперед (активне вікно)">▸</button>
+          <button id="toolbar-btn-reload" class="btn btn-icon" title="Оновити (активне вікно)">⟳</button>
+        </div>
+
+        <div class="address-bar-container">
+          <span class="address-icon">🔍</span>
+          <input 
+            id="url-input" 
+            class="address-input"
+            type="text" 
+            placeholder="Введіть URL або пошуковий запит..." 
+            spellcheck="false" 
+            autocomplete="off"
+          />
+          <button id="navigate-btn" class="btn btn-go" title="Перейти">➜</button>
+        </div>
+
+        <button id="toolbar-btn-close-active" class="btn btn-icon phantom-btn-close" title="Закрити активне вікно (Ctrl+W)">✕</button>
+      </div>
+
+      <!-- WINDOW SHELF: CHIPS FOR ALL FLOATING WINDOWS (NEVER OCCLUDED) -->
+      <div id="window-shelf" class="window-shelf">
+        <div id="window-shelf-list" class="window-shelf-list">
+          <!-- Dynamically populated window chips -->
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <!-- ADD-ON TOOLBAR ACTIONS (icons of installed extensions) -->
+        <div id="extensions-bar" class="extensions-bar"></div>
+
+        <button id="extensions-btn" class="btn btn-icon" title="Розширення (Ctrl+Shift+A)">
+          <span>🧩</span>
+        </button>
+
+        <button id="downloads-btn" class="btn btn-icon" title="Завантаження (Ctrl+J)" style="position: relative;">
+          <span>📥</span>
+          <span id="downloads-badge" class="downloads-badge hidden">0</span>
+        </button>
+
+        <button id="new-window-btn" class="btn btn-primary" title="Нове просторове вікно">
+          <span>+</span>
+          <span>Нове вікно</span>
+        </button>
+
+        <button id="hub-toggle-btn" class="btn btn-icon" title="Home Hub (Speed Dial & Закладки)">
+          <span>🏠</span>
+        </button>
+
+        <button id="btn-toggle-toolbar" class="btn btn-icon" title="Згорнути верхню панель (F10)">
+          <span>▲</span>
+        </button>
+      </div>
+
+      <!-- APP DROPDOWN MENU -->
+      <div id="app-dropdown-menu" class="app-dropdown-menu hidden">
+        <div class="menu-section">
+          <div class="menu-header">Файл</div>
+          <button class="menu-item" data-action="new-window">
+            <span>Нове вікно</span> <kbd>Ctrl+N</kbd>
+          </button>
+          <button class="menu-item" data-action="open-hub">
+            <span>Home Hub (Закладки)</span> <kbd>Ctrl+H</kbd>
+          </button>
+          <button class="menu-item" data-action="close-active">
+            <span>Закрити активне вікно</span> <kbd>Ctrl+W</kbd>
+          </button>
+          <button class="menu-item" data-action="open-downloads">
+            <span>Завантаження</span> <kbd>Ctrl+J</kbd>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" data-action="app-exit">
+            <span>Вихід</span> <kbd>Alt+F4</kbd>
+          </button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-header">Правка</div>
+          <button class="menu-item" data-action="nav-back">
+            <span>Назад</span> <kbd>Alt+←</kbd>
+          </button>
+          <button class="menu-item" data-action="nav-forward">
+            <span>Вперед</span> <kbd>Alt+→</kbd>
+          </button>
+          <button class="menu-item" data-action="nav-reload">
+            <span>Перезавантажити</span> <kbd>Ctrl+R</kbd>
+          </button>
+          <button class="menu-item" data-action="copy-url">
+            <span>Копіювати URL</span>
+          </button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-header">Вигляд</div>
+          <button class="menu-item" data-action="toggle-toolbar">
+            <span>Згорнути / показати панель</span> <kbd>F10</kbd>
+          </button>
+          <button class="menu-item" data-action="toggle-fullscreen">
+            <span>Повноекранний режим</span> <kbd>F11</kbd>
+          </button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-header">Розширення</div>
+          <button class="menu-item" data-action="open-extensions">
+            <span>Менеджер розширень</span> <kbd>Ctrl+Shift+A</kbd>
+          </button>
+          <button class="menu-item" data-action="install-extension">
+            <span>Встановити з файлу (.xpi / .crx)</span>
+          </button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-header">Вікна</div>
+          <button class="menu-item" data-action="open-tab-manager">
+            <span>Менеджер вікон</span> <kbd>Alt+T</kbd>
+          </button>
+          <button class="menu-item" data-action="cascade-windows">
+            <span>Каскадне впорядкування</span>
+          </button>
+          <button class="menu-item" data-action="minimize-all">
+            <span>Згорнути всі вікна</span>
+          </button>
+          <button class="menu-item" data-action="restore-all">
+            <span>Розгорнути всі вікна</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- FLOATING TRIGGER WHEN TOOLBAR IS COLLAPSED -->
+    <div id="toolbar-expand-trigger" class="toolbar-expand-trigger hidden" title="Розгорнути панель навігації (F10)">
+      <span>▼ Панель</span>
+    </div>
+
+    <!-- BACKDROP FOR LEFT TAB MANAGER SIDEBAR -->
+    <div id="tab-sidebar-backdrop"></div>
+
+    <!-- TAB MANAGER SLIDE-OUT LEFT SIDEBAR -->
+    <aside id="windows-popup-menu" class="hidden">
+      <div class="popup-header">
+        <div class="popup-title-group">
+          <span class="popup-title">Менеджер вікон</span>
+          <span id="popup-tab-count" class="popup-counter">0</span>
+        </div>
+        <div class="popup-header-actions">
+          <button id="popup-close-btn" title="Закрити панель вкладок (Esc)">✕</button>
+        </div>
+      </div>
+
+      <div class="popup-filter-container">
+        <input 
+          id="tab-filter-input" 
+          class="popup-filter-input" 
+          type="text" 
+          placeholder="Пошук серед відкритих вікон..." 
+          spellcheck="false"
+        />
+      </div>
+
+      <div class="popup-body">
+        <div id="popup-tab-list" class="tab-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="popup-footer">
+        <button id="popup-new-tab-btn" class="btn btn-primary" style="font-size:12px; padding:6px 12px;">+ Нове вікно</button>
+        <button id="popup-close-all-btn" class="btn" style="font-size:12px; padding:6px 12px;">Закрити всі</button>
+      </div>
+    </aside>
+
+    <!-- SPATIAL WORKSPACE -->
+    <main id="workspace">
+      <!-- Phantom frames container (DOM overlays for WebContentsViews) -->
+      <div id="phantom-frames"></div>
+
+      <!-- Initial / Empty Workspace Placeholder -->
+      <div id="workspace-placeholder">
+        <div class="placeholder-card">
+          <h1>Spatial Workspace</h1>
+          <p>
+            Кожна вебсторінка — це вільне плаваюче вікно, яке можна переміщувати, масштабувати та накладати.
+          </p>
+          <div class="placeholder-buttons">
+            <button id="placeholder-new-window" class="btn btn-primary">+ Відкрити перше вікно</button>
+            <button id="placeholder-open-hub" class="btn">🏠 Відкрити Home Hub</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOME HUB OVERLAY (Speed Dial) -->
+      <div id="home-hub" class="hidden">
+        <div class="hub-header">
+          <div class="hub-title-group">
+            <h2 class="hub-title">Home Hub</h2>
+            <span class="hub-subtitle">Speed Dial & Закладки</span>
+          </div>
+          <div class="hub-actions">
+            <button id="hub-add-btn" class="btn btn-primary">+ Додати закладку</button>
+            <button id="hub-close-btn" class="btn btn-icon" title="Закрити Hub">✕</button>
+          </div>
+        </div>
+
+        <div class="hub-search-container">
+          <input 
+            id="hub-search-input" 
+            class="hub-search-input" 
+            type="text" 
+            placeholder="Швидкий пошук у закладках або введіть запит для Google..." 
+            spellcheck="false"
+          />
+        </div>
+
+        <div id="bookmarks-grid" class="bookmarks-grid">
+          <!-- Dynamically populated bookmark cards -->
+        </div>
+      </div>
+    </main>
+
+    <!-- BOOKMARK ADD/EDIT MODAL -->
+    <div id="bookmark-modal" class="hub-modal-overlay" style="display: none;">
+      <div class="hub-modal">
+        <h3 id="modal-title">Додати закладку</h3>
+        <div class="hub-form-group">
+          <label for="bm-title-input">Назва сайту</label>
+          <input id="bm-title-input" type="text" placeholder="Наприклад: GitHub" />
+        </div>
+        <div class="hub-form-group">
+          <label for="bm-url-input">Адреса сайту (URL)</label>
+          <input id="bm-url-input" type="text" placeholder="https://..." />
+        </div>
+        <div class="hub-form-group">
+          <label for="bm-icon-input">Іконка (необов'язково)</label>
+          <input id="bm-icon-input" type="text" placeholder="URL до favicon або залишіть порожнім" />
+        </div>
+        <input type="hidden" id="bm-edit-id" value="" />
+        <div class="hub-modal-buttons">
+          <button id="modal-cancel-btn" class="btn">Скасувати</button>
+          <button id="modal-save-btn" class="btn btn-primary">Зберегти</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXTENSIONS (ADD-ONS) MANAGER -->
+    <div id="extensions-modal" class="ext-overlay hidden">
+      <div class="ext-panel" role="dialog" aria-label="Менеджер розширень">
+        <div class="ext-header">
+          <div>
+            <h3 class="ext-title">🧩 Розширення</h3>
+            <span class="ext-subtitle">WebExtensions: Firefox (.xpi), Chrome (.crx), .zip або розпакована папка</span>
+          </div>
+          <button id="ext-close-btn" class="btn btn-icon" title="Закрити (Esc)">✕</button>
+        </div>
+
+        <div id="ext-dropzone" class="ext-dropzone">
+          <div class="ext-dropzone-text">Перетягніть сюди файл <b>.xpi</b>, <b>.crx</b> або <b>.zip</b></div>
+          <div class="ext-dropzone-actions">
+            <button id="ext-install-file-btn" class="btn btn-primary">Встановити з файлу…</button>
+            <button id="ext-install-folder-btn" class="btn">Завантажити папку…</button>
+          </div>
+        </div>
+
+        <div id="ext-status" class="ext-status hidden"></div>
+
+        <div id="ext-list" class="ext-list"></div>
+
+        <div class="ext-footer">
+          Розширення працюють у всіх просторових вікнах. Підтримується підмножина WebExtensions API, яку надає Electron:
+          content scripts, storage, runtime, tabs, webRequest. Деякі складні аддони можуть працювати частково.
+        </div>
+      </div>
+    </div>
+
+    <!-- DOWNLOADS POPUP / DROPDOWN PANEL -->
+    <div id="downloads-panel" class="downloads-panel hidden" role="dialog" aria-label="Завантаження">
+      <div class="dl-header">
+        <div class="dl-title-group">
+          <span>📥</span>
+          <h3 class="dl-title">Завантаження</h3>
+        </div>
+        <div class="dl-header-actions">
+          <button id="downloads-open-folder-btn" class="btn btn-sm" title="Відкрити системну папку завантажень">📁 Папка</button>
+          <button id="downloads-clear-btn" class="btn btn-sm" title="Очистити історію">🗑️</button>
+          <button id="downloads-close-btn" class="btn btn-icon" title="Закрити (Esc)">✕</button>
+        </div>
+      </div>
+      <div id="downloads-list" class="downloads-list">
+        <!-- Dynamically populated download items -->
+      </div>
+      <div class="dl-footer">
+        <span class="dl-footer-text">Усі завантажені файли зберігаються в системну папку «Завантаження»</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RENDERER SCRIPTS -->
+  <script src="scripts/window-controls.js"></script>
+  <script src="scripts/workspace.js"></script>
+  <script src="scripts/toolbar.js"></script>
+  <script src="scripts/hub.js"></script>
+  <script src="scripts/tab-manager.js"></script>
+  <script src="scripts/extensions.js"></script>
+  <script src="scripts/downloads.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>

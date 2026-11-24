@@ -1,3 +1,3 @@
 @echo off
-cd /d "E:\Spatial Browser"
+cd /d "%~dp0"
 npm install

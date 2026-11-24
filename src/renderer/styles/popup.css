@@ -1,0 +1,304 @@
+/* TAB MANAGER - SLIDE-OUT LEFT SIDEBAR */
+
+/* Backdrop overlay to close sidebar on outside click */
+#tab-sidebar-backdrop {
+  position: absolute;
+  top: var(--toolbar-height);
+  left: 0;
+  width: 100%;
+  height: calc(100vh - var(--toolbar-height));
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#tab-sidebar-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Left drawer sidebar */
+#windows-popup-menu {
+  position: absolute;
+  top: var(--toolbar-height);
+  left: 0;
+  width: 340px;
+  max-width: 85vw;
+  height: calc(100vh - var(--toolbar-height));
+  background: linear-gradient(180deg, rgba(22, 25, 38, 0.98) 0%, rgba(15, 17, 26, 0.98) 100%);
+  border-right: 1px solid var(--border-color);
+  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+#windows-popup-menu.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#windows-popup-menu.hidden {
+  display: none;
+}
+
+/* Sidebar header */
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(30, 34, 53, 0.7);
+}
+
+.popup-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.popup-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.popup-counter {
+  font-size: 11px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Close button - prominent and easy to hit */
+#popup-close-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#popup-close-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  transform: scale(1.05);
+}
+
+#popup-close-btn:active {
+  transform: scale(0.95);
+}
+
+/* Search filter in sidebar */
+.popup-filter-container {
+  padding: 12px 16px 8px 16px;
+}
+
+.popup-filter-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s;
+  user-select: text;
+}
+
+.popup-filter-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  background: var(--bg-tertiary);
+}
+
+/* Sidebar tab list */
+.popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.tab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.tab-item:hover {
+  background: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(3px);
+}
+
+.tab-item.active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.22) 0%, rgba(99, 102, 241, 0.08) 100%);
+  border-color: var(--border-active);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2);
+}
+
+.tab-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 3px;
+  background: var(--accent-cyan);
+  border-radius: 0 2px 2px 0;
+}
+
+.tab-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-item-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-item-url {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.tab-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tab-active-indicator {
+  font-size: 10px;
+  color: var(--accent-cyan);
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* Close individual tab button */
+.tab-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-close-btn:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+  transform: scale(1.1);
+}
+
+.popup-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.popup-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  background: rgba(18, 20, 32, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.popup-footer .btn {
+  flex: 1;
+}

@@ -1,4 +1,3 @@
 @echo off
-cd /d "E:\Spatial Browser"
-npm install-scripts approve electron
+cd /d "%~dp0"
 npm install
